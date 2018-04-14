@@ -1,0 +1,28 @@
+{
+	"dev":{
+		"httpHeaderPrefix":"alicespa3",
+		"database":{
+			"databases":{
+				"main":{
+					"host":"example.com",
+					"port":3306,
+					"connectionLimit":10,
+					"databaseName":"AliceSPA3",
+					"users":{
+						"main":{
+							"username":"root",
+							"password":"root"
+						}
+					}
+				}
+			}
+		},
+		"authentication":{
+			"nameFields":[
+				"username",
+				"email",
+				"telephone"
+			]
+		}		
+	}
+}
