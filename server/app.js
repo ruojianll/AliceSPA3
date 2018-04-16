@@ -1,6 +1,8 @@
+
 const Express = require('express');
 const utils = require('../utils/utils');
 const argv = require('minimist')(process.argv);
+
 if(!argv.env){
 	argv.env = 'pro';
 }
@@ -9,12 +11,16 @@ if(argv.env === 'pro'){
 }
 
 console.log(`In env : ${argv.env}`)
-const error = require('../config/error.json');
-const ServerConfig = require('../config/server.json')[argv.env];
+const error = require('../config/error');
+const ServerConfig = require('../config/server')[argv.env];
 if(!ServerConfig.database.databases.main.port){
 	ServerConfig.database.databases.main.port = 3306;
 }
-
+if(!ServerConfig.timezone){
+	ServerConfig.timezone = 'GMT';
+}
+process.env.TZ = ServerConfig.timezone;
+console.log(process.env.TZ)
 const app = new Express();
 app.set('argv',argv);
 app.set('utils',utils);
@@ -36,9 +42,12 @@ var auth = require('./middleware/authentication.js');
 // 		res.AP.apiSuc(b);
 // 	},null,false);
 // });
-
+// var zzz = require('./model/zzz');
+// app.get('/',function(req,res){
+// 	zzz(Db).createTable();
+// })
 require('./router/api/')(app);
-
+Db.query('SELECT * FROM zzz ORDER BY time DESC LIMIT 1',[new Date()],(e,b)=>{console.log(b[0].time.toLocaleString())})
 app.listen(8081,function(){
 	console.log("Running on 8081 port...");
 });

@@ -59,7 +59,7 @@ typings/
 
 document/site
 
-config/*.json
+config/*.js
 
-!config/error.json
+!config/error.js
 

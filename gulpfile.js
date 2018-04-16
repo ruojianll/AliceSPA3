@@ -1,3 +1,4 @@
+//process.env.TZ="GMT"
 var gulp = require("gulp");
 var exec = require("child_process").exec;
 var pm2 = require("pm2");
@@ -41,7 +42,7 @@ gulp.task("restart-dev-server",function(cb){
 });
 gulp.task("dev-server",["serve-dev-server","restart-dev-server"],function(){
 	console.log('Watching server codes...')
-	gulp.watch(["server/**/*.js","utils/**/*.js","config/**/*.json"],["restart-dev-server"])
+	gulp.watch(["server/**/*.js","utils/**/*.js","config/**/*.js"],["restart-dev-server"])
 	.on("change",function(event) {
   		console.log('File ' + event.path + ' was ' + event.type + ', running tasks...');
 	});

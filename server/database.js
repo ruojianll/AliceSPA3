@@ -7,7 +7,8 @@ module.exports = function(dbConfig){
 		port            : dbConfig.database.databases.main.port,
 		user            : dbConfig.database.databases.main.users.main.username,
 		password        : dbConfig.database.databases.main.users.main.password,
-		database        : dbConfig.database.databases.main.databaseName
+		database        : dbConfig.database.databases.main.databaseName,
+		timezone		: dbConfig.database.databases.main.timezone
 	};
 	var mysqlPool  = Mysql.createPool(mysqlOpts);
 

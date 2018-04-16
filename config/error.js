@@ -1,4 +1,4 @@
-{
+module.exports = {
 	"E-1":{
 		"code":"E-1",
 		"description":"Unknow Error",

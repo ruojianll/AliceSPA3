@@ -1,29 +1,62 @@
 var _ = require('lodash');
 var utils = require('../../utils/utils');
-module.exports = function(db){
-	var me = this;
-	this.db = db;
-	this.metadata = {
-		fields:{
-			id:'id'
-		},
-		tableName:'defaultTable'
-
-	}
-	this._dbProtectedFields = [
+var dbValues = {
+		'CURRENT_TIMESTAMP':Symbol('CURRENT_TIMESTAMP'),
+		'NULL':Symbol('NULL')
+	};
+var _dbProtectedFields = [
 		'_create_time',
 		'_update_time',
 		'_creator_id',
 		'_updater_id',
 		'_active'
-	]
+	];
+var _metadata = {
+	fields:{
+		'_create_time':{
+			type:'timestamp',
+			notNull:true,
+			default:dbValues.CURRENT_TIMESTAMP
+		},
+		'_update_time':{
+			type:'timestamp',
+			notNull:true,
+			default:dbValues.CURRENT_TIMESTAMP,
+			onUpdate:dbValues.CURRENT_TIMESTAMP,
+		},
+		'_creator_id':{
+			type:'varchar(36)',
+			notNull:true
+		},
+		'_updater_id':{
+			type:'varchar(36)',
+			notNull:true
+		},
+		'_active':{
+			type:'tinyint(4)',
+			notNull:true,
+			default:'1'
+		},
+		'_id':{
+			type:'varchar(36)',
+			key:true,
+			notNull:true,
+		},
+	},
+	id:'_id',
+	tableName:'defaultName'
+};
+exports.dbValues = dbValues;
+exports.base = function(db){
+	var me = this;
+	this.db = db;
 	this.isFieldsProtected = function(fields){
-		if(!_.includes(this._dbProtectedFields,this.metadata.fields.id)){
-			this._dbProtectedFields.push(this.metadata.fields.id);
+		if(!_.includes(_dbProtectedFields,this.metadata.fields.id)){
+			_dbProtectedFields.push(this.metadata.fields.id);
 		}
 
 		fields = _.isObject(fields) ? _.keys(fields) : fields;
-		return !_.isEmpty(_.intersection(this._dbProtectedFields,fields));
+		return !_.isEmpty(_.intersection(_dbProtectedFields,fields));
 	}
 	this.create = function(fields,operatorId,cb,transactionConn = null){
 		if(this.isFieldsProtected(fields)){
@@ -95,5 +128,46 @@ module.exports = function(db){
 				_.concat(this.metadata.tableName,sqlWhereParams),
 				cb);
 		}
+	}
+	this.createTable = function(cb){
+		var extendFunc = function(a,b){
+			if((_.isObject(a) || _.isArray(a)) && (_.isObject(b) || _.isArray(b))){
+				return _.extendWith(a,b,extendFunc)
+			}
+			else{
+				return b;
+			}
+		}
+		var parseDbValue = function(value){
+			var key;
+			if(_.isSymbol(value)){
+				key = _.findKey(dbValues,(v,k)=>{
+					return v === value;
+				});
+			}
+			else if(_.isString(value)){
+				key = `'${value}'`;
+			}
+			return key;
+		}
+		var fieldsData = _.extendWith({},_metadata,this.metadata,extendFunc);
+		if(fieldsData.id != _metadata.id){
+			fieldsData.fields[fieldsData.id] = _metadata.fields[_metadata.id];
+			delete fieldsData.fields[_metadata.id];			
+		}
+		var items = [];
+		_.each(fieldsData.fields,(v,k)=>{
+			if(!v.notNull && !v.default){
+				v.default = dbValues.NULL;
+			}
+			var currField = `\`${k}\` ${v.type}${v.notNull?' NOT NULL':''}${v.default?' DEFAULT '+parseDbValue(v.default):''}${v.onUpdate?' ON UPDATE '+parseDbValue(v.onUpdate):''}`;
+			items.push(currField);
+			if(v.unique){
+				items.push(`UNIQUE KEY \`${k}_UNIQUE\` (\`${k}\`)`);
+			}
+		});
+		items.push(`PRIMARY KEY (\`${fieldsData.id}\`)`);
+		var sql = `CREATE TABLE ${this.metadata.tableName}(${items.join(',\n')})`;
+		this.db.query(sql,cb);
 	}
 }
