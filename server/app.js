@@ -30,17 +30,6 @@ app.set('db',Db);
 var models = require('./model/')(Db);
 app.set('model',models);
 
-var auth = require('./middleware/authentication');
-
-// app.get('/',function(req,res){
-// 	models.user.delete(null,{username:'test111',password:'zzz'},'a',(a,b,c,extra)=>{
-// 		res.AP.apiSuc(b);
-// 	},null,false);
-// });
-// var zzz = require('./model/zzz');
-// app.get('/',function(req,res){
-// 	zzz(Db).createTable();
-// })
 require('./router/api/')(app);
 
 var cons = require('./middleware/apiParser').constrict;
