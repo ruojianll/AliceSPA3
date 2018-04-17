@@ -1,3 +1,5 @@
+var _ = require('lodash');
+var utils = require('../../utils/utils');
 var {base,dbValues} = require('./base');
 module.exports = function(db){
 	var obj = {};
@@ -43,6 +45,25 @@ module.exports = function(db){
 		},
 		id:'id',
 		tableName:'user'
+	}
+
+	obj.checkToken = function(nameFields,token){
+		return new Promise((resolve,reject)=>{
+			obj.db.query(
+			`SELECT * FROM ?? WHERE ${utils.parseSqlTemplate(_.keys(nameFields).length + 2,'??','?','AND',_(Array(_.keys(nameFields).length + 2)).fill('=').fill('>',0,1).valueOf())}`,
+			_.concat([obj.metadata.tableName,'token_expired_time',new Date(),'token',token],utils.mixSqlTemplateValue(nameFields)),
+			(err,results)=>{
+				if(err){
+					reject(err);
+					return;
+				}
+				if(results.length === 0){
+					resolve(false);
+					return;
+				}
+				resolve(true);
+			});	
+		})
 	}
 	return obj;
 }

@@ -1,6 +1,10 @@
 var _ = require('lodash');
+var moment = require('moment');
 var router = require('express').Router();
 var cons = require('../../../middleware/apiParser').constrict;
+
+
+module.exports = (config)=>{
 /**
 @name User register
 @memberof ApiRout
@@ -10,8 +14,7 @@ var cons = require('../../../middleware/apiParser').constrict;
 @response {JSON} [id : String] Id of created user
 */
 router.post('/register',cons([
-	{or:[
-		'username','email','telephone']},
+	{or:config.authentication.nameFields},
 	'password'
 ],false),function(req,res){
 	fields = _.omitBy({
@@ -38,8 +41,7 @@ router.post('/register',cons([
 @response {JSON} [token : String] User token
 */
 router.post('/login',cons([
-	{or:[
-		'username','email','telephone']},
+	{or:config.authentication.nameFields},
 	'password'
 ],false),function(req,res){
 	fields = _.omitBy({
@@ -50,10 +52,12 @@ router.post('/login',cons([
 	},_.isNil);
 	var userModel = req.app.get('model').user;
 	var token = req.app.get('utils').generateToken('');
+	var tokenGenerateTime = moment();
+	var tokenExpiredTime = tokenGenerateTime.clone().add(req.app.get('config').authentication.userTokenValidTime,'s');
 	userModel.update(null,fields,{
 		token:token,
-		token_generate_time:new Date(),
-		token_expired_time:new Date()
+		token_generate_time:tokenGenerateTime.toDate(),
+		token_expired_time:tokenExpiredTime.toDate()
 	},'WEB REGISTER',(err,results)=>{
 		if(err){
 			res.AP.dbErr(err);
@@ -67,4 +71,6 @@ router.post('/login',cons([
 	})	
 });
 
-module.exports = router;
+
+return router;
+};

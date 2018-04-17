@@ -30,7 +30,7 @@ app.set('db',Db);
 var models = require('./model/')(Db);
 app.set('model',models);
 
-require('./router/api/')(app);
+require('./router/api/')(app,ServerConfig);
 
 var cons = require('./middleware/apiParser').constrict;
 

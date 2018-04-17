@@ -18,6 +18,14 @@ module.exports = {
 					}
 				}
 			}
-		}	
+		},
+		'authentication':{
+			'userTokenValidTime':31*24*3600, // seconds
+			'nameFields':[
+				'username',
+				'telephone',
+				'email'
+			]
+		}
 	}
 }
