@@ -16,31 +16,36 @@ var _metadata = {
 		'_create_time':{
 			type:'timestamp',
 			notNull:true,
-			default:dbValues.CURRENT_TIMESTAMP
+			default:dbValues.CURRENT_TIMESTAMP,
+			index:-1
 		},
 		'_update_time':{
 			type:'timestamp',
 			notNull:true,
 			default:dbValues.CURRENT_TIMESTAMP,
 			onUpdate:dbValues.CURRENT_TIMESTAMP,
+			index:-2
 		},
 		'_creator_id':{
 			type:'varchar(36)',
-			notNull:true
+			notNull:true,
+			index:-3
 		},
 		'_updater_id':{
 			type:'varchar(36)',
-			notNull:true
+			index:-4
 		},
 		'_active':{
 			type:'tinyint(4)',
 			notNull:true,
-			default:'1'
+			default:'1',
+			index:-5
 		},
 		'_id':{
 			type:'varchar(36)',
 			key:true,
 			notNull:true,
+			index:0
 		},
 	},
 	id:'_id',
@@ -64,17 +69,15 @@ exports.base = function(db){
 		}
 		var conn = transactionConn || this.db;
 		var fieldNames = _(fields).keys().concat(
-			[this.metadata.fields.id,
-			'_creator_id',
-			'_updater_id']
+			[this.metadata.id,
+			'_creator_id']
 			).value();
 		var id = utils.generateUUIDv4();
 		var fieldValues = _(fields).values().concat(
 				[id,
-				operatorId,
 				operatorId]
 			).value();
-
+		console.log(`INSERT INTO ??(${utils.parseSqlTemplate(fieldNames.length,'??',null,',')}) VALUES(${utils.parseSqlTemplate(fieldNames.length,'?',null,',')})`,_.concat(this.metadata.tableName,fieldNames,fieldValues))
 		conn.query(`INSERT INTO ??(${utils.parseSqlTemplate(fieldNames.length,'??',null,',')}) VALUES(${utils.parseSqlTemplate(fieldNames.length,'?',null,',')})`,
 			_.concat(this.metadata.tableName,fieldNames,fieldValues),
 			(err,results,fields)=>{
@@ -82,28 +85,24 @@ exports.base = function(db){
 			});
 	};
 	this.find = function(id,fields,getFields,cb){
-		var getFieldNames = getFields?getFields.join(',') : '*';
 		if(id){
 			fields = {};
 			fields[this.metadata.fields.id] = id;
 		}
 		var sqlWhereParams = utils.mixSqlTemplateValue(fields);
-		
-		this.db.query(`SELECT ${utils.parseSqlTemplate(getFieldNames.length,'??',null,',')} FROM ?? WHERE ${utils.parseSqlTemplate(fields.length,'??','?','AND')}`,
-			_.concat(getFieldNames,this.metadata.tableName,sqlWhereParams),
+		this.db.query(`SELECT ${utils.parseSqlTemplate(getFields.length,'??',null,',')} FROM ?? WHERE ${utils.parseSqlTemplate(_.keys(fields).length,'??','?','AND')}`,
+			_.concat(getFields,this.metadata.tableName,sqlWhereParams),
 			cb)
 	}
 	var _update = function(id,fields,updateFields,operatorId,cb,transactionConn = null){
 		var conn = transactionConn || me.db;
 		if(id){
 			fields = {};
-			fields[me.metadata.fields.id] = id;
+			fields[me.metadata.id] = id;
 		}
-
 		var sqlSetParams = utils.mixSqlTemplateValue(updateFields);
 		var sqlWhereParams = utils.mixSqlTemplateValue(fields);
-
-		conn.query(`UPDATE ?? SET ${utils.parseSqlTemplate(updateFields.length,'??','?',',')} WHERE ${utils.parseSqlTemplate(fields.length,'??','?','AND')}`,
+		conn.query(`UPDATE ?? SET ${utils.parseSqlTemplate(_.keys(updateFields).length,'??','?',',')} WHERE ${utils.parseSqlTemplate(fields.length,'??','?','AND')}`,
 			_.concat(me.metadata.tableName,sqlSetParams,sqlWhereParams),
 			cb);
 	}
@@ -135,7 +134,7 @@ exports.base = function(db){
 				return _.extendWith(a,b,extendFunc)
 			}
 			else{
-				return b;
+				return a;
 			}
 		}
 		var parseDbValue = function(value){
@@ -150,24 +149,46 @@ exports.base = function(db){
 			}
 			return key;
 		}
-		var fieldsData = _.extendWith({},_metadata,this.metadata,extendFunc);
+		var fieldsData = _.extendWith({},this.metadata,_metadata,extendFunc);
 		if(fieldsData.id != _metadata.id){
 			fieldsData.fields[fieldsData.id] = _metadata.fields[_metadata.id];
 			delete fieldsData.fields[_metadata.id];			
 		}
-		var items = [];
-		_.each(fieldsData.fields,(v,k)=>{
-			if(!v.notNull && !v.default){
-				v.default = dbValues.NULL;
+		var fields = _(fieldsData.fields).keys().map((v)=>{
+			return {
+				name:v,
+				data:fieldsData.fields[v]
 			}
-			var currField = `\`${k}\` ${v.type}${v.notNull?' NOT NULL':''}${v.default?' DEFAULT '+parseDbValue(v.default):''}${v.onUpdate?' ON UPDATE '+parseDbValue(v.onUpdate):''}`;
+		}).value().sort((a,b)=>{
+			var na = a.data.index;
+			if(na < 0){
+				na = 100000000 - na;
+			}
+			if(na === undefined){
+				na = 99999999;
+			}
+			var nb = b.data.index;
+			if(nb < 0){
+				nb = 100000000 - nb;
+			}
+			if(nb === undefined){
+				nb = 99999999;
+			}
+			return na - nb;
+		});
+		var items = [];
+		_.each(fields,(v)=>{
+			if(!v.data.notNull && !v.data.default){
+				v.data.default = dbValues.NULL;
+			}
+			var currField = `\`${v.name}\` ${v.data.type}${v.data.notNull?' NOT NULL':''}${v.data.default?' DEFAULT '+parseDbValue(v.data.default):''}${v.data.onUpdate?' ON UPDATE '+parseDbValue(v.data.onUpdate):''}`;
 			items.push(currField);
-			if(v.unique){
-				items.push(`UNIQUE KEY \`${k}_UNIQUE\` (\`${k}\`)`);
+			if(v.data.unique){
+				items.push(`UNIQUE KEY \`${v.name}_UNIQUE\` (\`${v.name}\`)`);
 			}
 		});
 		items.push(`PRIMARY KEY (\`${fieldsData.id}\`)`);
-		var sql = `CREATE TABLE ${this.metadata.tableName}(${items.join(',\n')})`;
+		var sql = `CREATE TABLE ${this.metadata.tableName}(${items.join(',')})`;
 		this.db.query(sql,cb);
 	}
 }

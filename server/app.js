@@ -1,4 +1,3 @@
-
 const Express = require('express');
 const utils = require('../utils/utils');
 const argv = require('minimist')(process.argv);
@@ -20,7 +19,6 @@ if(!ServerConfig.timezone){
 	ServerConfig.timezone = 'GMT';
 }
 process.env.TZ = ServerConfig.timezone;
-console.log(process.env.TZ)
 const app = new Express();
 app.set('argv',argv);
 app.set('utils',utils);
@@ -32,10 +30,7 @@ app.set('db',Db);
 var models = require('./model/')(Db);
 app.set('model',models);
 
-var httpParserMiddleware = require('./middleware/httpParser.js')
-app.use(httpParserMiddleware);
-
-var auth = require('./middleware/authentication.js');
+var auth = require('./middleware/authentication');
 
 // app.get('/',function(req,res){
 // 	models.user.delete(null,{username:'test111',password:'zzz'},'a',(a,b,c,extra)=>{
@@ -47,7 +42,9 @@ var auth = require('./middleware/authentication.js');
 // 	zzz(Db).createTable();
 // })
 require('./router/api/')(app);
-Db.query('SELECT * FROM zzz ORDER BY time DESC LIMIT 1',[new Date()],(e,b)=>{console.log(b[0].time.toLocaleString())})
+
+var cons = require('./middleware/apiParser').constrict;
+
 app.listen(8081,function(){
 	console.log("Running on 8081 port...");
 });

@@ -19,7 +19,7 @@ npm install
 gulp dev-server
 ```
 
-## Documention
+## Documentation
 ### build
 ```
 gulp doc

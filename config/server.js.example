@@ -1,13 +1,15 @@
-{
+module.exports = {
 	"dev":{
 		"httpHeaderPrefix":"alicespa3",
+		"timezone":"Asia/Shanghai",//server will run in this timezone, `ls /usr/share/zoneinfo`
 		"database":{
 			"databases":{
 				"main":{
-					"host":"example.com",
+					"host":"xxx.xxx",
 					"port":3306,
 					"connectionLimit":10,
 					"databaseName":"AliceSPA3",
+					"timezone":"+08:00",//+HH:MM or -HH:MM, timezone of database, 'SELECT TIMEDIFF(NOW(), UTC_TIMESTAMP)' to get it
 					"users":{
 						"main":{
 							"username":"root",
@@ -16,13 +18,6 @@
 					}
 				}
 			}
-		},
-		"authentication":{
-			"nameFields":[
-				"username",
-				"email",
-				"telephone"
-			]
-		}		
+		}	
 	}
 }

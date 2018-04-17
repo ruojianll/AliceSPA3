@@ -18,7 +18,7 @@ module.exports = {
 	},
 	"E4":{
 		"code":"E4",
-		"description":"Http Request Params Loss"
+		"description":"API Request Params Check Failed"
 	},
 	"E404":{
 		"code":"E404",
