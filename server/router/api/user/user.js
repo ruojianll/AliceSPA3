@@ -3,8 +3,10 @@ var moment = require('moment');
 var router = require('express').Router();
 var cons = require('../../../middleware/apiParser').constrict;
 
+var auth = require('../../../middleware/authentication');
 
-module.exports = (config)=>{
+module.exports = (app)=>{
+var config = app.get('config');
 /**
 @name User register
 @memberof ApiRout
@@ -21,15 +23,15 @@ router.post('/register',cons([
 		username:req.body.username,
 		email:req.body.email,
 		telephone:req.body.telephone,
-		password:req.body.password
+		password:req.body.password,
+		creator_id:'web register',
+		updater_id:'web register'
 	},_.isNil)
 	var userModel = req.app.get('model').user;
-	userModel.create(fields,'api register',(err,results,fields,extra)=>{
-		if(err){
-			res.AP.dbErr(err);
-			return;
-		}
-		res.AP.suc(extra);
+	userModel.create(fields).then((data)=>{
+		res.AP.suc({id:data.id});
+	},(err)=>{
+		res.AP.modelErr(err);
 	});
 });
 /**
@@ -54,23 +56,23 @@ router.post('/login',cons([
 	var token = req.app.get('utils').generateToken('');
 	var tokenGenerateTime = moment();
 	var tokenExpiredTime = tokenGenerateTime.clone().add(req.app.get('config').authentication.userTokenValidTime,'s');
-	userModel.update(null,fields,{
+	userModel.update({
 		token:token,
 		token_generate_time:tokenGenerateTime.toDate(),
-		token_expired_time:tokenExpiredTime.toDate()
-	},'WEB REGISTER',(err,results)=>{
-		if(err){
-			res.AP.dbErr(err);
-			return;
+		token_expired_time:tokenExpiredTime.toDate(),
+		updator_id:"web login"
+	},{where:fields}).then((data)=>{
+		if(data[0] === 1){
+			res.AP.suc({token:token});
 		}
-		if(results.affectedRows === 0){
-			res.AP.finish('E404','user not found');
-			return;
+		else{
+			res.AP.err('E404','user not found');
 		}
-		res.AP.suc({token:token});
-	})	
+	},(err)=>{
+		res.AP.modelErr(err);
+	})
 });
 
-
+router.post('/test',auth.auth,(a,b)=>{b.AP.suc(a.user)})
 return router;
 };

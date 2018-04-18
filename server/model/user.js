@@ -1,69 +1,43 @@
-var _ = require('lodash');
-var utils = require('../../utils/utils');
-var {base,dbValues} = require('./base');
-module.exports = function(db){
-	var obj = {};
-	base.apply(obj,arguments);
-	
-	obj.metadata = {
-		fields:{
-			'username':{
-				type:'varchar(30)',
-				default:dbValues.NULL,
-				unique:true,
-				index:1
-			},
-			'email':{
-				type:'varchar(45)',
-				default:dbValues.NULL,
-				unique:true,
-				index:2
-			},
-			'telephone':{
-				type:'varchar(25)',
-				default:dbValues.NULL,
-				unique:true,
-				index:3
-			},
-			'password':{
-				type:'varchar(128)',
-				notNull:true,
-				index:4
-			},
-			'token':{
-				type:'varchar(128)',
-				index:5
-			},
-			'token_generate_time':{
-				type:'datetime',
-				index:6
-			},
-			'token_expired_time':{
-				type:'datetime',
-				index:7
+module.exports = (sequelize,DataTypes)=>{
+	return sequelize.define('user',{
+		id:{
+			type:DataTypes.UUID,
+			primaryKey:true,
+			defaultValue:DataTypes.UUIDV4
+		},
+		username:{
+			type:DataTypes.STRING(30),
+			unique:true
+		},
+		email:{
+			type:DataTypes.STRING(45),
+			unique:true,
+			validate:{
+				isEmail:true
 			}
 		},
-		id:'id',
-		tableName:'user'
-	}
+		telephone:{
+			type:DataTypes.STRING(25),
+			unique:true
+		},
+		password:{
+			type:DataTypes.STRING(128),
+			allowNull:false
+		},
+		token:{
+			type:DataTypes.STRING(128),
+			defaultValue:DataTypes.UUIDV4
 
-	obj.checkToken = function(nameFields,token){
-		return new Promise((resolve,reject)=>{
-			obj.db.query(
-			`SELECT * FROM ?? WHERE ${utils.parseSqlTemplate(_.keys(nameFields).length + 2,'??','?','AND',_(Array(_.keys(nameFields).length + 2)).fill('=').fill('>',0,1).valueOf())}`,
-			_.concat([obj.metadata.tableName,'token_expired_time',new Date(),'token',token],utils.mixSqlTemplateValue(nameFields)),
-			(err,results)=>{
-				if(err){
-					reject(err);
-					return;
-				}
-				if(results.length === 0){
-					resolve(false);
-					return;
-				}
-				resolve(true);
-			});	
-		})
-	}
-	return obj;
+		},
+		token_generate_time:DataTypes.DATE,
+		token_expired_time:DataTypes.DATE,
+		last_active_time:DataTypes.DATE
+	},{
+		paranoid:true,
+		defaultScope:{
+			attributes:{
+				exclude:['password']
+			}
+		}
+	});
 }

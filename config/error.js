@@ -1,6 +1,6 @@
 module.exports = {
-	"E-1":{
-		"code":"E-1",
+	"E1":{
+		"code":"E1",
 		"description":"Unknow Error",
 		"error":null
 	},
@@ -19,6 +19,18 @@ module.exports = {
 	"E4":{
 		"code":"E4",
 		"description":"API Request Params Check Failed"
+	},
+	"E5":{
+		"code":"E5",
+		"description":"Model Error"
+	},
+	"E6":{
+		"code":"E6",
+		"description":"API Request Headers Check Failed"
+	},
+	"E7":{
+		"code":"E7",
+		"description":"ACL Denied"
 	},
 	"E404":{
 		"code":"E404",

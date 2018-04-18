@@ -5,26 +5,30 @@ function _AliceSPA3HttpParserPayload(res){
 		var error = res.app.get('error');
 		var err = error[errCode];
 		if(!err){
-			err = error['E-1'];
-			err.code = errCode;
-			
+			err = error['E1'];
+			err.code = errCode;	
 		}
-		if(errorBody){
+		if(errorBody && res.app.get("config").api.showErrorDetails){
 			err.error = errorBody;
 		}
 		if(description){
 			err.description = description;
 		}
 		err.data = data;
-
+		if(errCode !== 'E0' && res.app.get('config').api.showErrorDetails){
+			console.error(err);
+		}
 		res.json(err);
 	}
 	this.success = function(data){
 		this.finish('E0',null,null,data)
 	}
 	this.suc = this.success;
-	this.dbErr = function(dbErr){
-		this.finish('DB-' + dbErr.errno, dbErr.code,'Something wrong in database communication');
+	this.err = function(code,err){
+		this.finish(code,err);
+	},
+	this.modelErr = function(err){
+		this.err('E5',err);
 	}
 }
 function consCheckValueType(value){
@@ -94,13 +98,11 @@ module.exports = {
 			var result = consParse(req.body,cons,null,isEval,(msg)=>{
 				errors.push(msg);
 			});
-
 			if(result === true){
 				next();
 			}
 			else{
-				
-				res.AP.finish('E04',errors.join('\n'));
+				res.AP.finish('E4',errors.join('\n'));
 			}			
 		}
 	}

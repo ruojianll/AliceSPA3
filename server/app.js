@@ -19,6 +19,7 @@ if(!ServerConfig.timezone){
 	ServerConfig.timezone = 'GMT';
 }
 process.env.TZ = ServerConfig.timezone;
+ServerConfig.env = argv.env;
 const app = new Express();
 app.set('argv',argv);
 app.set('utils',utils);
@@ -27,10 +28,14 @@ app.set('config',ServerConfig);
 
 const Db = require('./database')(ServerConfig);
 app.set('db',Db);
+
+const Acl = require('./acl')(Db);
+app.set('acl',Acl);
+
 var models = require('./model/')(Db);
 app.set('model',models);
 
-require('./router/api/')(app,ServerConfig);
+require('./router/api/')(app,app);
 
 var cons = require('./middleware/apiParser').constrict;
 
